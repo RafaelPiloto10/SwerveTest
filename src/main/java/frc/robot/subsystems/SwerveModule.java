@@ -17,8 +17,12 @@ import frc.robot.util.SwerveModulePosition;
 public class SwerveModule {
     private static final double kWheelRadius = 0.0508;
     private static final int kEncoderResolution = 2048;
-    // TODO: Consider gear ratio's?
-    private static final double kEncoderConstant = (1 / kEncoderResolution) * kWheelRadius * Math.PI;
+    private static final double kDriveGearRatio = 6.54;
+    private static final double kTurnGearRatio = 15.43;
+
+    private static final double kDriveEncoderConstant = (kDriveGearRatio * 2 * kWheelRadius * Math.PI)
+            / kEncoderResolution;
+    private static final double kTurnEncoderConstant = (kTurnGearRatio * 2 * Math.PI) / kEncoderResolution;
 
     private static final double kModuleMaxAngularVelocity = DrivetrainSubsystem.kMaxAngularSpeed;
     private static final double kModuleMaxAngularAcceleration = 2 * Math.PI; // radians per second squared
@@ -54,23 +58,9 @@ public class SwerveModule {
      */
     public SwerveModule(
             int driveMotorChannel,
-            int turningMotorChannel,
-            int driveEncoderChannelA,
-            int driveEncoderChannelB,
-            int turningEncoderChannelA,
-            int turningEncoderChannelB) {
+            int turningMotorChannel) {
         m_driveMotor = new WPI_TalonFX(driveMotorChannel);
         m_turningMotor = new WPI_TalonFX(turningMotorChannel);
-
-        // Set the distance per pulse for the drive encoder. We can simply use the
-        // distance traveled for one rotation of the wheel divided by the encoder
-        // resolution.
-
-        // Set the distance (in this case, angle) in radians per pulse for the turning
-        // encoder.
-        // This is the the angle through an entire rotation (2 * pi) divided by the
-        // encoder resolution.
-        // TODO: m_turningEncoder.setDistancePerPulse(2 * Math.PI / kEncoderResolution);
 
         // Limit the PID Controller's input range between -pi and pi and set the input
         // to be continuous.
@@ -132,8 +122,8 @@ public class SwerveModule {
      * 
      * @return the drive motor encoder's rate
      */
-    private double getDriveEncoderRate() {
-        return m_driveMotor.getSelectedSensorVelocity(0) * kEncoderConstant * 10;
+    public double getDriveEncoderRate() {
+        return m_driveMotor.getSelectedSensorVelocity(0) * kDriveEncoderConstant * 10;
     }
 
     /**
@@ -141,8 +131,8 @@ public class SwerveModule {
      * 
      * @return the drive motor encoder's distance
      */
-    private double getDriveEncoderDistance() {
-        return m_driveMotor.getSelectedSensorPosition(0) * kEncoderConstant;
+    public double getDriveEncoderDistance() {
+        return m_driveMotor.getSelectedSensorPosition(0) * kDriveEncoderConstant;
     }
 
     /**
@@ -150,7 +140,16 @@ public class SwerveModule {
      * 
      * @return get the turn motor angle
      */
-    private double getTurnEncoderDistance() {
-        return m_turningMotor.getSelectedSensorPosition(0) * kEncoderConstant;
+    public double getTurnEncoderDistance() {
+        return m_turningMotor.getSelectedSensorPosition(0) * kTurnEncoderConstant;
     }
+
+    public double getAngleSetpoint() {
+        return m_turningPIDController.getSetpoint().position;
+    }
+
+    public double getDriveSetpoint() {
+        return m_drivePIDController.getSetpoint();
+    }
+
 }
