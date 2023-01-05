@@ -25,10 +25,10 @@ public class DrivetrainSubsystem extends SubsystemBase {
 	private final Translation2d m_backLeftLocation = new Translation2d(-0.417, 0.417);
 	private final Translation2d m_backRightLocation = new Translation2d(-0.417, -0.417);
 
-	private final SwerveModule m_frontLeft = new SwerveModule(1, 2);
-	private final SwerveModule m_frontRight = new SwerveModule(3, 4);
-	private final SwerveModule m_backLeft = new SwerveModule(5, 6);
-	private final SwerveModule m_backRight = new SwerveModule(7, 8);
+	public final SwerveModule m_frontLeft = new SwerveModule(15, 16, 0);
+	public final SwerveModule m_frontRight = new SwerveModule(9, 10, 0);
+	public final SwerveModule m_backLeft = new SwerveModule(14, 13, 0);
+	public final SwerveModule m_backRight = new SwerveModule(12, 11, 0);
 
 	private final AHRS m_gyro = new AHRS(Port.kMXP);
 
@@ -93,5 +93,15 @@ public class DrivetrainSubsystem extends SubsystemBase {
 		SmartDashboard.putNumber("FLA-Setpoint", m_frontLeft.getAngleSetpoint());
 		SmartDashboard.putNumber("BRA-Setpoint", m_backRight.getAngleSetpoint());
 		SmartDashboard.putNumber("BLA-Setpoint", m_backLeft.getAngleSetpoint());
+
+		SmartDashboard.putNumber("FRD-Actual", m_frontRight.getDriveEncoderDistance());
+		SmartDashboard.putNumber("FLD-Actual", m_frontLeft.getDriveEncoderDistance());
+		SmartDashboard.putNumber("BRD-Actual", m_backRight.getDriveEncoderDistance());
+		SmartDashboard.putNumber("BLD-Actual", m_backLeft.getDriveEncoderDistance());
+
+		SmartDashboard.putNumber("FRD-Setpoint", m_frontRight.getDriveSetpoint());
+		SmartDashboard.putNumber("FLD-Setpoint", m_frontLeft.getDriveSetpoint());
+		SmartDashboard.putNumber("BRD-Setpoint", m_backRight.getDriveSetpoint());
+		SmartDashboard.putNumber("BLD-Setpoint", m_backLeft.getDriveSetpoint());
 	}
 }

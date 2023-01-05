@@ -17,14 +17,14 @@ import frc.robot.util.SwerveModulePosition;
 
 public class SwerveModule {
     private static final double kWheelRadius = 0.0508;
-    private static final int kEncoderResolution = 2048;
+    private static final double kEncoderResolution = 2048;
 
     private static final double kDriveGearRatio = 6.54;
     private static final double kTurnGearRatio = 15.43;
 
-    private static final double kDriveEncoderConstant = (kDriveGearRatio * 2 * kWheelRadius * Math.PI)
-            / kEncoderResolution;
-    private static final double kTurnEncoderConstant = (kTurnGearRatio * 2 * Math.PI) / kEncoderResolution;
+    private static final double kDriveEncoderConstant = (2 * kWheelRadius * Math.PI)
+            / (kEncoderResolution * kDriveGearRatio);
+    private static final double kTurnEncoderConstant = 2 * Math.PI / (kTurnGearRatio * kEncoderResolution);
 
     private static final double kModuleMaxAngularVelocity = DrivetrainSubsystem.kMaxAngularSpeed;
     private static final double kModuleMaxAngularAcceleration = 2 * Math.PI; // radians per second squared
@@ -32,20 +32,21 @@ public class SwerveModule {
     private final WPI_TalonFX m_driveMotor;
     private final WPI_TalonFX m_turningMotor;
 
-    // Gains are for example purposes only - must be determined for your own robot!
     private final PIDController m_drivePIDController = new PIDController(1, 0, 0);
 
     // Gains are for example purposes only - must be determined for your own robot!
     private final ProfiledPIDController m_turningPIDController = new ProfiledPIDController(
-            1,
+            2,
             0,
             0,
             new TrapezoidProfile.Constraints(
                     kModuleMaxAngularVelocity, kModuleMaxAngularAcceleration));
 
     // Gains are for example purposes only - must be determined for your own robot!
-    private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(1, 3);
-    private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(1, 0.5);
+    private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(0, 0);
+    private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(0, 0);
+
+    private double angleOffset = 0;
 
     /**
      * Constructs a SwerveModule with a drive motor, turning motor, drive encoder
@@ -60,11 +61,17 @@ public class SwerveModule {
      */
     public SwerveModule(
             int driveMotorChannel,
-            int turningMotorChannel) {
+            int turningMotorChannel,
+            double angleOffset) {
         m_driveMotor = new WPI_TalonFX(driveMotorChannel);
         m_turningMotor = new WPI_TalonFX(turningMotorChannel);
+        this.angleOffset = angleOffset;
 
         m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
+        m_driveMotor.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
+
+        m_turningMotor.setSelectedSensorPosition(0);
+        m_driveMotor.setSelectedSensorPosition(0);
 
         // Limit the PID Controller's input range between -pi and pi and set the input
         // to be continuous.
@@ -110,7 +117,7 @@ public class SwerveModule {
         final double turnOutput = m_turningPIDController.calculate(getTurnEncoderDistance(),
                 state.angle.getRadians());
 
-        final double turnFeedforward = m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
+        final double turnFeedforward = 0; // m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
 
         m_driveMotor.setVoltage(driveOutput + driveFeedforward);
         m_turningMotor.setVoltage(turnOutput + turnFeedforward);
@@ -127,7 +134,7 @@ public class SwerveModule {
      * @return the drive motor encoder's rate
      */
     public double getDriveEncoderRate() {
-        return m_driveMotor.getSelectedSensorVelocity(0) * kDriveEncoderConstant * 10;
+        return m_driveMotor.getSelectedSensorVelocity() * kDriveEncoderConstant * 10;
     }
 
     /**
@@ -136,7 +143,7 @@ public class SwerveModule {
      * @return the drive motor encoder's distance
      */
     public double getDriveEncoderDistance() {
-        return m_driveMotor.getSelectedSensorPosition(0) * kDriveEncoderConstant;
+        return m_driveMotor.getSelectedSensorPosition() * kDriveEncoderConstant;
     }
 
     /**
@@ -145,7 +152,7 @@ public class SwerveModule {
      * @return get the turn motor angle
      */
     public double getTurnEncoderDistance() {
-        return m_turningMotor.getSelectedSensorPosition(0) * kTurnEncoderConstant;
+        return (m_turningMotor.getSelectedSensorPosition() * kTurnEncoderConstant) - this.angleOffset;
     }
 
     public double getAngleSetpoint() {
@@ -156,4 +163,11 @@ public class SwerveModule {
         return m_drivePIDController.getSetpoint();
     }
 
+    public double getTurnEncoderRaw() {
+        return m_turningMotor.getSelectedSensorPosition();
+    }
+
+    public boolean turnAtSetpoint() {
+        return Math.abs(m_turningPIDController.getSetpoint().position - getTurnEncoderDistance()) < 0.1;
+    }
 }
