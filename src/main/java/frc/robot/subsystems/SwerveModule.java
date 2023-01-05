@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 
 import edu.wpi.first.math.controller.PIDController;
@@ -17,6 +18,7 @@ import frc.robot.util.SwerveModulePosition;
 public class SwerveModule {
     private static final double kWheelRadius = 0.0508;
     private static final int kEncoderResolution = 2048;
+
     private static final double kDriveGearRatio = 6.54;
     private static final double kTurnGearRatio = 15.43;
 
@@ -61,6 +63,8 @@ public class SwerveModule {
             int turningMotorChannel) {
         m_driveMotor = new WPI_TalonFX(driveMotorChannel);
         m_turningMotor = new WPI_TalonFX(turningMotorChannel);
+
+        m_turningMotor.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
 
         // Limit the PID Controller's input range between -pi and pi and set the input
         // to be continuous.
